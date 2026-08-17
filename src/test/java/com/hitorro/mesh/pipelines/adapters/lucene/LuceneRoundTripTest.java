@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hitorro.mesh.pipelines.model.SinkSpec;
 import com.hitorro.mesh.pipelines.model.SourceSpec;
-import com.hitorro.mesh.pipelines.sinks.Sink;
 import com.hitorro.mesh.pipelines.sinks.SinkRegistry;
+import com.hitorro.util.core.iterator.sinks.Sink;
 import com.hitorro.mesh.pipelines.sources.SourceFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,8 +28,8 @@ class LuceneRoundTripTest {
     @Test
     void index_via_sink_search_back_via_source(@TempDir Path home) throws Exception {
         SinkRegistry reg = new SinkRegistry(home);
-        try (Sink sink = reg.create(new SinkSpec.Lucene("airports", true))) {
-            sink.open();
+        try (Sink<JsonNode> sink = reg.create(new SinkSpec.Lucene("airports", true))) {
+            sink.start();
             sink.add(JSON.readTree("{\"iata\":\"JFK\",\"name\":\"John F Kennedy\",\"country\":\"US\"}"));
             sink.add(JSON.readTree("{\"iata\":\"LHR\",\"name\":\"London Heathrow\",\"country\":\"GB\"}"));
             sink.add(JSON.readTree("{\"iata\":\"NRT\",\"name\":\"Tokyo Narita\",\"country\":\"JP\"}"));

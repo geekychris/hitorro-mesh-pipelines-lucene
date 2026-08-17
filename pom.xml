@@ -11,15 +11,11 @@
 
     <name>hitorro-mesh-pipelines-lucene</name>
     <description>
-        Real Lucene-backed index sink + search source for hitorro-mesh-
-        pipelines. Registered via ServiceLoader — dropping this jar on the
-        classpath upgrades the Phase-1 NDJSON stub to a real Lucene index.
-
-        Depends on lucene-core + lucene-analysis-common + lucene-queryparser
-        directly (no hitorro-index transitive). Physical index lands under
-        ${hitorro.pipelines.home}/lucene/&lt;name&gt;/. Every field in each row
-        is indexed as a StringField; the whole row JSON is stored as
-        {@code _source} when the sink spec sets {@code storeSource: true}.
+        ServiceLoader glue registering hitorro-index's LuceneSink for the
+        &quot;lucene&quot; pipeline kind. The actual Sink implementation
+        lives in hitorro-index so non-mesh callers (standalone indexers,
+        Spring Boot batches, tests) can use it directly via the core
+        Sink JsonNode interface.
     </description>
 
     <properties>
@@ -27,7 +23,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <lucene.version>9.11.1</lucene.version>
+        <lucene.version>9.12.0</lucene.version>
     </properties>
 
     <dependencies>
@@ -36,6 +32,15 @@
             <artifactId>hitorro-mesh-pipelines</artifactId>
             <version>3.0.1</version>
         </dependency>
+        <!-- The actual LuceneSink lives in hitorro-index so non-mesh callers
+             can use it directly. This module is glue only. -->
+        <dependency>
+            <groupId>com.hitorro</groupId>
+            <artifactId>hitorro-index</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <!-- Lucene APIs still needed for LuceneSearchService/Source in this module
+             (search side hasn't been relocated yet). -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
