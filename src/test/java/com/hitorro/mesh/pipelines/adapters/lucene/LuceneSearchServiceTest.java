@@ -127,6 +127,30 @@ class LuceneSearchServiceTest {
     }
 
     @Test
+    void jsonSpec_omittingStoreSource_defaultsToTrue_returnsRealContent() throws Exception {
+        // Regression protection for the "empty hits" gotcha. Users who
+        // wrote {kind: lucene, name: X} with no explicit storeSource
+        // used to get search hits returning {} because the Java boolean
+        // defaulted to false. Now Jackson's @JsonCreator defaults to
+        // true, so the common case just works.
+        SinkSpec parsed = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readValue("{\"kind\":\"lucene\",\"name\":\"airports\"}", SinkSpec.class);
+        assertThat(parsed).isInstanceOf(SinkSpec.Lucene.class);
+        SinkSpec.Lucene spec = (SinkSpec.Lucene) parsed;
+        assertThat(spec.storeSource())
+                .as("default storeSource must be true when omitted from JSON")
+                .isTrue();
+
+        try (Sink<JsonNode> sink = sinks.create(spec)) {
+            sink.start();
+            sink.add(JSON.readTree("{\"iata\":\"JFK\",\"name\":\"John F Kennedy\"}"));
+        }
+        var r = svc.search("airports", "kennedy", 20);
+        assertThat(r.hitCount()).isEqualTo(1);
+        assertThat(r.hits().get(0).get("iata").asText()).isEqualTo("JFK");   // real content
+    }
+
+    @Test
     void search_storeSourceFalse_returnsEmptyRowsButFindsHits() throws Exception {
         // Real behaviour + real gotcha: LuceneSink writes every field
         // with Field.Store.NO when storeSource=false, so search back
