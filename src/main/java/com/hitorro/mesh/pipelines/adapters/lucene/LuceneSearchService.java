@@ -6,6 +6,10 @@ package com.hitorro.mesh.pipelines.adapters.lucene;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hitorro.index.config.LuceneFieldTypes;
+import com.hitorro.index.query.JVSQueryParser;
+import com.hitorro.jsontypesystem.Type;
+import com.hitorro.util.core.iterator.sinks.index.JvsLuceneSink;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -89,7 +93,7 @@ public final class LuceneSearchService {
             IndexSearcher searcher = new IndexSearcher(reader);
             Query q = (queryStr == null || queryStr.isBlank())
                     ? new MatchAllDocsQuery()
-                    : new QueryParser("_text", new StandardAnalyzer()).parse(queryStr);
+                    : parserFor(dir).parse(queryStr);
             long t0 = System.nanoTime();
             ScoreDoc[] hits = searcher.search(q, cap).scoreDocs;
             long tookMs = (System.nanoTime() - t0) / 1_000_000;
@@ -107,6 +111,59 @@ public final class LuceneSearchService {
                 }
             }
             return new SearchResult(indexName, queryStr, reader.numDocs(), rows.size(), tookMs, rows);
+        }
+    }
+
+    /**
+     * Build a QueryParser for {@code indexDir}. When the sink stored a
+     * JVS type sidecar ({@link JvsLuceneSink#TYPE_SIDECAR}) — as
+     * {@code jvs-lucene} sinks do — return a {@link JVSQueryParser}
+     * that rewrites logical field paths ({@code body.mls.segmented_ner})
+     * into the physical projected Lucene names
+     * ({@code body.mls.segmented_ner.textmarkup_en_m}) using the
+     * loaded {@link Type}.
+     *
+     * <p>Physical field names still parse correctly — JVSQueryParser
+     * detects them via a suffix regex and passes them through
+     * unchanged, so old code that referenced the flattened name keeps
+     * working.</p>
+     *
+     * <p>Falls back to a plain {@link QueryParser} over {@code _text}
+     * when no sidecar exists (typical of the un-typed
+     * {@code LuceneIndexSink}). Any failure loading the sidecar
+     * degrades to the plain parser rather than failing the search.</p>
+     */
+    private static QueryParser parserFor(Path indexDir) {
+        Path sidecar = indexDir.resolve(JvsLuceneSink.TYPE_SIDECAR);
+        if (Files.exists(sidecar)) {
+            try {
+                bootstrapLuceneFieldTypes();
+                Type type = new Type();
+                type.init(JSON.readTree(sidecar.toFile()));
+                return new JVSQueryParser(type, "_text", new StandardAnalyzer(), "en");
+            } catch (Exception e) {
+                System.err.println("[LuceneSearchService] failed to load type sidecar "
+                        + sidecar + " — falling back to plain QueryParser: " + e);
+            }
+        }
+        return new QueryParser("_text", new StandardAnalyzer());
+    }
+
+    /** Same bootstrap the sink does — makes JVSQueryParser's method
+     *  → LuceneFieldType lookups actually resolve on servers that
+     *  didn't pre-load the field-types registry from HT_BIN. */
+    private static void bootstrapLuceneFieldTypes() {
+        LuceneFieldTypes lfts = LuceneFieldTypes.getInstance();
+        if (lfts.get("identifier") != null) return;
+        String bin = System.getProperty("HT_BIN",
+                System.getProperty("ht.bin", System.getenv("HT_BIN")));
+        if (bin == null) bin = System.getProperty("user.dir");
+        Path path = Path.of(bin, "config", "jsonconfigs", "lucene", "lucene_fields.json");
+        if (!Files.exists(path)) return;
+        try {
+            lfts.loadFrom(JSON.readTree(path.toFile()));
+        } catch (IOException e) {
+            System.err.println("[LuceneSearchService] bootstrapLuceneFieldTypes failed: " + e);
         }
     }
 
