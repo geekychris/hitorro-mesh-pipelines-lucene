@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Hitorro Mesh Pipelines Lucene logo" width="180">
+</p>
+
 # hitorro-mesh-pipelines-lucene
 
 Apache Lucene backend for the `lucene` sink + source kinds in
