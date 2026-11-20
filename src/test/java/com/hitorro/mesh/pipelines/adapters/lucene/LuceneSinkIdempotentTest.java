@@ -3,8 +3,9 @@
  */
 package com.hitorro.mesh.pipelines.adapters.lucene;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import com.hitorro.util.json.JsonMappers;
 import com.hitorro.mesh.pipelines.model.SinkSpec;
 import com.hitorro.mesh.pipelines.model.SourceSpec;
 import com.hitorro.mesh.pipelines.sinks.SinkRegistry;
@@ -30,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LuceneSinkIdempotentTest {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMappers.json();
 
     @Test
     void sameTaskSeqTwice_indexHasExactlyOneDoc(@TempDir Path home) throws Exception {
@@ -52,7 +53,7 @@ class LuceneSinkIdempotentTest {
         SourceFactory sf = new SourceFactory(reg);
         List<JsonNode> hits = drain(sf.open(new SourceSpec.Lucene("airports", null), new AtomicBoolean()));
         assertThat(hits).hasSize(1);
-        assertThat(hits.get(0).get("name").asText()).contains("second");
+        assertThat(hits.get(0).get("name").asString()).contains("second");
     }
 
     @Test
@@ -87,7 +88,7 @@ class LuceneSinkIdempotentTest {
         SourceFactory sf = new SourceFactory(reg);
         List<JsonNode> hits = drain(sf.open(new SourceSpec.Lucene("crosstask", null), new AtomicBoolean()));
         assertThat(hits).hasSize(2);
-        assertThat(hits).extracting(r -> r.get("src").asText())
+        assertThat(hits).extracting(r -> r.get("src").asString())
                 .containsExactlyInAnyOrder("a", "b");
     }
 

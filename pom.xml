@@ -6,7 +6,7 @@
 
     <groupId>com.hitorro</groupId>
     <artifactId>hitorro-mesh-pipelines-lucene</artifactId>
-    <version>3.1.0</version>
+    <version>4.0.0</version>
     <packaging>jar</packaging>
 
     <name>hitorro-mesh-pipelines-lucene</name>
@@ -94,9 +94,9 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
+                <groupId>tools.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.18.12</version>
+                <version>3.1.8</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -429,14 +429,14 @@
         <dependency>
             <groupId>com.hitorro</groupId>
             <artifactId>hitorro-mesh-pipelines</artifactId>
-            <version>3.1.0</version>
+            <version>4.0.0</version>
         </dependency>
         <!-- The actual LuceneSink lives in hitorro-index so non-mesh callers
              can use it directly. This module is glue only. -->
         <dependency>
             <groupId>com.hitorro</groupId>
             <artifactId>hitorro-index</artifactId>
-            <version>3.0.2</version>
+            <version>4.0.0</version>
         </dependency>
         <!-- Lucene APIs still needed for LuceneSearchService/Source in this module
              (search side hasn't been relocated yet). -->
@@ -456,9 +456,8 @@
             <version>${lucene.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.18.12</version>
         </dependency>
 
         <dependency>

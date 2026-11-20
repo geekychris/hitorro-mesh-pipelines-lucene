@@ -3,9 +3,10 @@
  */
 package com.hitorro.mesh.pipelines.adapters.lucene;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import com.hitorro.util.json.JsonMappers;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
 import com.hitorro.index.config.LuceneFieldTypes;
 import com.hitorro.index.query.JVSQueryParser;
 import com.hitorro.jsontypesystem.Type;
@@ -20,6 +21,7 @@ import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.FSDirectory;
+import tools.jackson.core.JacksonException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,7 +44,7 @@ import java.util.List;
  */
 public final class LuceneSearchService {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMappers.json();
 
     private final Path home;
 
@@ -162,7 +164,7 @@ public final class LuceneSearchService {
         if (!Files.exists(path)) return;
         try {
             lfts.loadFrom(JSON.readTree(path.toFile()));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             System.err.println("[LuceneSearchService] bootstrapLuceneFieldTypes failed: " + e);
         }
     }
