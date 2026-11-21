@@ -3,8 +3,9 @@
  */
 package com.hitorro.mesh.pipelines.adapters.lucene;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import com.hitorro.util.json.JsonMappers;
 import com.hitorro.mesh.pipelines.model.SinkSpec;
 import com.hitorro.mesh.pipelines.model.SourceSpec;
 import com.hitorro.mesh.pipelines.sinks.SinkRegistry;
@@ -23,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class LuceneRoundTripTest {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMappers.json();
 
     @Test
     void index_via_sink_search_back_via_source(@TempDir Path home) throws Exception {
@@ -43,14 +44,14 @@ class LuceneRoundTripTest {
         // Match all.
         List<JsonNode> all = drain(sf.open(new SourceSpec.Lucene("airports", null), new AtomicBoolean()));
         assertThat(all).hasSize(3);
-        assertThat(all).extracting(r -> r.get("iata").asText())
+        assertThat(all).extracting(r -> r.get("iata").asString())
                 .containsExactlyInAnyOrder("JFK", "LHR", "NRT");
 
         // Term match via analysed _text catch-all — "heathrow" tokenised
         // (lowercased) matches London Heathrow's stored name.
         List<JsonNode> heathrow = drain(sf.open(new SourceSpec.Lucene("airports", "heathrow"), new AtomicBoolean()));
         assertThat(heathrow).hasSize(1);
-        assertThat(heathrow.get(0).get("iata").asText()).isEqualTo("LHR");
+        assertThat(heathrow.get(0).get("iata").asString()).isEqualTo("LHR");
     }
 
     private static List<JsonNode> drain(Iterator<JsonNode> it) throws Exception {

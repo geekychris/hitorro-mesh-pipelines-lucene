@@ -3,8 +3,9 @@
  */
 package com.hitorro.mesh.pipelines.adapters.lucene;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import com.hitorro.util.json.JsonMappers;
 import com.hitorro.mesh.pipelines.model.SinkSpec;
 import com.hitorro.mesh.pipelines.sinks.SinkRegistry;
 import com.hitorro.util.core.iterator.sinks.Sink;
@@ -33,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class LuceneSearchServiceTest {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = JsonMappers.json();
 
     @TempDir Path home;
     LuceneSearchService svc;
@@ -108,7 +109,7 @@ class LuceneSearchServiceTest {
         // matches even though the source has "Heathrow".
         var r = svc.search("airports", "heathrow", 20);
         assertThat(r.hitCount()).isEqualTo(1);
-        assertThat(r.hits().get(0).get("iata").asText()).isEqualTo("LHR");
+        assertThat(r.hits().get(0).get("iata").asString()).isEqualTo("LHR");
     }
 
     @Test
@@ -133,7 +134,7 @@ class LuceneSearchServiceTest {
         // used to get search hits returning {} because the Java boolean
         // defaulted to false. Now Jackson's @JsonCreator defaults to
         // true, so the common case just works.
-        SinkSpec parsed = new com.fasterxml.jackson.databind.ObjectMapper()
+        SinkSpec parsed = JsonMappers.json()
                 .readValue("{\"kind\":\"lucene\",\"name\":\"airports\"}", SinkSpec.class);
         assertThat(parsed).isInstanceOf(SinkSpec.Lucene.class);
         SinkSpec.Lucene spec = (SinkSpec.Lucene) parsed;
@@ -147,7 +148,7 @@ class LuceneSearchServiceTest {
         }
         var r = svc.search("airports", "kennedy", 20);
         assertThat(r.hitCount()).isEqualTo(1);
-        assertThat(r.hits().get(0).get("iata").asText()).isEqualTo("JFK");   // real content
+        assertThat(r.hits().get(0).get("iata").asString()).isEqualTo("JFK");   // real content
     }
 
     @Test
